@@ -1,0 +1,141 @@
+swagger: "2.0"
+info:
+  version: "1.0.0"
+  title: "PROTRAVEL-FINANCE"
+  description: ""
+  contact:
+    name: "PROTRAVEL-FINANCE Team"
+    email: "PROTRAVEL-FINANCE@gmail.com"
+host: localhost
+x-go-package: protravel-finance
+basePath: /
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+
+paths:
+  /user:
+    post:
+      summary: "Register a new user"
+      description: "Creates a new user with the provided details."
+      tags:
+        - user
+      parameters:
+        - in: body
+          name: user
+          required: true
+          schema:
+            $ref: "#/definitions/User"
+      responses:
+        201:
+          description: "User created"
+
+        400:
+          description: "Invalid input"
+        409:
+          description: "User already exists"
+        500:
+          description: "Internal error"
+
+definitions:
+  User:
+    type: object
+    description: "User data"
+    required:
+      - email
+      - password
+      - preferred_currency
+      - first_name
+      - last_name
+      - language
+      - timezone
+    properties:
+      id:
+        type: string
+        format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+        description: "Unique user ID (UUID)"
+      public_id:
+        type: string
+        maxLength: 11
+        example: "TW-X7Y2P8Q4"
+        description: "Public user ID for support"
+      email:
+        type: string
+        format: email
+        maxLength: 255
+        example: "test@example.com"
+        description: "User's email address"
+      password:
+        type: string
+        minLength: 8
+        example: "password123"
+        description: "Password (at least 8 characters, including one letter and one digit)"
+      first_name:
+        type: string
+        maxLength: 100
+        example: "John"
+        description: "User's first name"
+      last_name:
+        type: string
+        maxLength: 100
+        example: "Doe"
+        description: "User's last name"
+      preferred_currency:
+        type: string
+        minLength: 3
+        maxLength: 3
+        example: "USD"
+        description: "Currency code (ISO 4217, e.g., USD, EUR)"
+      language:
+        type: string
+        maxLength: 5
+        example: "en-US"
+        description: "Language code (e.g., en-US, optional)"
+      timezone:
+        type: string
+        maxLength: 50
+        example: "UTC"
+        description: "IANA timezone (e.g., UTC, Asia/Bangkok, optional)"
+      created_at:
+        type: string
+        format: date-time
+        example: "2025-07-20T12:00:00+07:00"
+        description: "Timestamp when user was created"
+      updated_at:
+        type: string
+        format: date-time
+        example: "2025-07-20T12:00:00+07:00"
+        description: "Timestamp when user was last updated"
+  TransportError:
+    type: object
+    required:
+      - message
+      - code
+    properties:
+      error:
+        type: string
+        example: "ServiceErrorUserAlreadyExists"
+        description: "Error type identifier"
+      message:
+        type: string
+        example: "user already exists: test@example.com"
+        description: "Human-readable error message"
+      details:
+        type: string
+        example: "Check email or public_id uniqueness"
+        description: "Additional error details (optional)"
+      code:
+        type: integer
+        format: int32
+        example: 409
+        description: "HTTP status code (e.g., 400, 409, 500)"
+      transaction_id:
+        type: string
+        format: uuid
+        example: "123e4567-e89b-12d3-a456-426614174000"
+        description: "Unique transaction ID for tracing"
+    description: "Error response for API requests"
