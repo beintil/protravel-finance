@@ -54,6 +54,9 @@ func (m *currencyRepository) SaveOrUpdateCurrencyRates(ctx context.Context, tx p
 }
 
 func (m *currencyRepository) SaveCurrencyRatesInCache(ctx context.Context, redisClient *redis.Client, currencyRates []*domain.Currency) error {
+	if len(currencyRates) == 0 {
+		return fmt.Errorf("SaveCurrencyRatesInCache: currencyRates is empty")
+	}
 	date := currencyRates[0].Date.Format(time.DateOnly)
 	hashKey := fmt.Sprintf("rates:%s", date)
 

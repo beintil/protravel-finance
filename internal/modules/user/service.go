@@ -52,8 +52,8 @@ func (m *userService) CreateUser(ctx context.Context, user *domain.User, passwor
 	}
 	defer m.transaction.Rollback(ctx, tx)
 
-	// TODO: По хорошему нужно задать максимальное количество итераций, иначе при непредвиденной ошибке цикл будет бесконечно пидораситься
-	for {
+	maxAttempts := 10
+	for i := 0; i < maxAttempts; i++ {
 		publicID, err := generate.PublicID()
 		if err != nil {
 			return nil, srverr.NewServerError(srverr.ErrInternalServerError).
@@ -67,6 +67,10 @@ func (m *userService) CreateUser(ctx context.Context, user *domain.User, passwor
 			}
 			return nil, srverr.NewServerError(srverr.ErrInternalServerError).
 				SetError(err.Error())
+		}
+		if i == maxAttempts-1 {
+			return nil, srverr.NewServerError(srverr.ErrInternalServerError).
+				SetError("failed to generate unique publicID after max attempts")
 		}
 	}
 	user.ID = uuid.New()
