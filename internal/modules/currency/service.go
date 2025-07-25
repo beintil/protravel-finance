@@ -33,7 +33,7 @@ func NewService(
 }
 
 func (s *currencyService) UpdateCurrencyRates(ctx context.Context, api exchangerate.ExchangeRate) srverr.ServerError {
-	resp, err := api.GetExchangeRates(ctx, string(domain.USDCode))
+	resp, err := api.GetExchangeRates(ctx, domain.USDCode.String())
 	if err != nil {
 		return srverr.NewServerError(srverr.ErrInternalServerError).
 			SetError(err.Error()).SetDetails("failed to get exchange rates from API")

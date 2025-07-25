@@ -18,7 +18,7 @@ func NewRepository() Repository {
 func (r *userRepository) CreateUser(ctx context.Context, tx pgx.Tx, user *domain.User) error {
 	row := tx.QueryRow(ctx, `
 	INSERT INTO users (
-	        id, public_id, email,
+	        id, public_id, email, phone, login,
 	    	password_hash, first_name,
 	        last_name, preferred_currency,
 	        language, timezone
@@ -29,6 +29,8 @@ func (r *userRepository) CreateUser(ctx context.Context, tx pgx.Tx, user *domain
 		user.ID,
 		user.PublicID,
 		user.Email,
+		user.Phone,
+		user.Login,
 		user.PasswordHash,
 		user.FirstName,
 		user.LastName,
@@ -49,7 +51,7 @@ func (r *userRepository) CreateUser(ctx context.Context, tx pgx.Tx, user *domain
 
 func (r *userRepository) GetUserByID(ctx context.Context, tx pgx.Tx, id string) (*domain.User, error) {
 	row := tx.QueryRow(ctx, `
-	SELECT id, public_id, email, password_hash, first_name, last_name, preferred_currency, language, timezone
+	SELECT id, public_id, email, phone, login, password_hash, first_name, last_name, preferred_currency, language, timezone
 		FROM users
 	WHERE id = $1`,
 		id)
@@ -59,6 +61,7 @@ func (r *userRepository) GetUserByID(ctx context.Context, tx pgx.Tx, id string) 
 		&user.ID,
 		&user.PublicID,
 		&user.Email,
+		&user.Phone,
 		&user.PasswordHash,
 		&user.FirstName,
 		&user.LastName,
@@ -77,7 +80,7 @@ func (r *userRepository) GetUserByID(ctx context.Context, tx pgx.Tx, id string) 
 
 func (r *userRepository) GetUserByPublicID(ctx context.Context, tx pgx.Tx, publicID string) (*domain.User, error) {
 	row := tx.QueryRow(ctx, `
-	SELECT id, public_id, email, password_hash, first_name, last_name, preferred_currency, language, timezone
+	SELECT id, public_id, email, phone, login, password_hash, first_name, last_name, preferred_currency, language, timezone
 		FROM users
 	WHERE public_id = $1`,
 		publicID)
@@ -87,6 +90,8 @@ func (r *userRepository) GetUserByPublicID(ctx context.Context, tx pgx.Tx, publi
 		&user.ID,
 		&user.PublicID,
 		&user.Email,
+		&user.Phone,
+		&user.Login,
 		&user.PasswordHash,
 		&user.FirstName,
 		&user.LastName,
@@ -105,7 +110,7 @@ func (r *userRepository) GetUserByPublicID(ctx context.Context, tx pgx.Tx, publi
 
 func (r *userRepository) GetUserByEmail(ctx context.Context, tx pgx.Tx, email string) (*domain.User, error) {
 	row := tx.QueryRow(ctx, `
-	SELECT id, public_id, email, password_hash, first_name, last_name, preferred_currency, language, timezone
+	SELECT id, public_id, email, phone, login, password_hash, first_name, last_name, preferred_currency, language, timezone
 		FROM users
 	WHERE email = $1`,
 		email)
@@ -115,6 +120,8 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, tx pgx.Tx, email st
 		&user.ID,
 		&user.PublicID,
 		&user.Email,
+		&user.Phone,
+		&user.Login,
 		&user.PasswordHash,
 		&user.FirstName,
 		&user.LastName,
@@ -127,6 +134,23 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, tx pgx.Tx, email st
 			return nil, RepositoryErrorUserNotFound
 		}
 		return nil, fmt.Errorf("GetUserByEmail/Scan: %w", err)
+	}
+	return &user, nil
+}
+
+func (r *userRepository) GetUserByLoginParam(ctx context.Context, tx pgx.Tx, loginParam string) (*domain.User, error) {
+	var user domain.User
+
+	row := tx.QueryRow(ctx, `
+	SELECT id, public_id, email, phone, login, password_hash, first_name, last_name, preferred_currency, language, timezone
+		FROM users
+	WHERE email = $1 OR public_id = $1 OR login = $1 OR phone = $1`, loginParam)
+	err := row.Scan(ctx, &user.ID, &user.PublicID, &user.Email, &user.Phone, &user.Login, &user.PasswordHash, &user.FirstName, &user.LastName, &user.PreferredCurrency, &user.Language, &user.Timezone)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, RepositoryErrorUserNotFound
+		}
+		return nil, fmt.Errorf("GetUserByLoginParam/Scan: %w", err)
 	}
 	return &user, nil
 }

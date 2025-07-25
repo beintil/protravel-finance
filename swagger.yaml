@@ -41,11 +41,10 @@ paths:
           description: "Internal error"
 
 definitions:
-  User:
+  RegisterUserRequest:
     type: object
-    description: "User data"
+    description: "Register user"
     required:
-      - email
       - password
       - preferred_currency
       - first_name
@@ -53,16 +52,9 @@ definitions:
       - language
       - timezone
     properties:
-      id:
+      phone:
         type: string
-        format: uuid
-        example: "550e8400-e29b-41d4-a716-446655440000"
-        description: "Unique user ID (UUID)"
-      public_id:
-        type: string
-        maxLength: 11
-        example: "TW-X7Y2P8Q4"
-        description: "Public user ID for support"
+        format: phone
       email:
         type: string
         format: email
@@ -100,16 +92,60 @@ definitions:
         maxLength: 50
         example: "UTC"
         description: "IANA timezone (e.g., UTC, Asia/Bangkok, optional)"
-      created_at:
+  RegisterUserResponse:
+    type: object
+    description: "register user response"
+    required:
+      - access_token
+      - user
+    properties:
+      access_token:
         type: string
-        format: date-time
-        example: "2025-07-20T12:00:00+07:00"
-        description: "Timestamp when user was created"
-      updated_at:
+        description: identification token
+      user:
+        $ref: "#/definitions/User"
+        description: register user
+  User:
+    type: object
+    description: "User data"
+    properties:
+      public_id:
         type: string
-        format: date-time
-        example: "2025-07-20T12:00:00+07:00"
-        description: "Timestamp when user was last updated"
+        maxLength: 11
+        example: "TW-X7Y2P8Q4"
+        description: "Public user ID for support"
+      email:
+        type: string
+        format: email
+        maxLength: 255
+        example: "test@example.com"
+        description: "User's email address"
+      first_name:
+        type: string
+        maxLength: 100
+        example: "John"
+        description: "User's first name"
+      last_name:
+        type: string
+        maxLength: 100
+        example: "Doe"
+        description: "User's last name"
+      preferred_currency:
+        type: string
+        minLength: 3
+        maxLength: 3
+        example: "USD"
+        description: "Currency code (ISO 4217, e.g., USD, EUR)"
+      language:
+        type: string
+        maxLength: 5
+        example: "en-US"
+        description: "Language code (e.g., en-US, optional)"
+      timezone:
+        type: string
+        maxLength: 50
+        example: "UTC"
+        description: "IANA timezone (e.g., UTC, Asia/Bangkok, optional)"
   TransportError:
     type: object
     required:

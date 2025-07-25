@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
+	"net/mail"
 	"protravel-finance/internal/domain"
 	"protravel-finance/internal/shared/database/postgres"
 	srverr "protravel-finance/internal/shared/server_error"
 	"protravel-finance/pkg/generate"
 	"regexp"
-	"strings"
 	"unicode/utf8"
 )
 
@@ -30,27 +31,38 @@ func NewService(
 	}
 }
 
-func (m *userService) CreateUser(ctx context.Context, user *domain.User, password string) (*domain.User, srverr.ServerError) {
-	if !domain.CurrencyCodesMap[domain.CurrencyCode(user.PreferredCurrency)] {
+var (
+	passwordRegexp = regexp.MustCompile(`[a-zA-Z].*\d|\d.*[a-zA-Z]`)
+)
+
+func (m *userService) CreateUser(ctx context.Context, tx pgx.Tx, user *domain.User, password string) (*domain.User, srverr.ServerError) {
+	if !domain.CurrencyCodesMap[user.PreferredCurrency] {
 		return nil, srverr.NewServerError(ServiceErrorCurrencyCodeNotAllowed)
 	}
-	if !strings.Contains(user.Email, "@") {
-		return nil, srverr.NewServerError(ServiceErrorEmailIsNotValid)
-	}
 	if utf8.RuneCountInString(password) < 8 {
-		return nil, srverr.NewServerError(ServiceErrorLenPassword).
-			SetError("password must be at least 8 characters long")
+		return nil, srverr.NewServerError(ServiceErrorLenPassword)
 	}
-	if matched, _ := regexp.MatchString(`[a-zA-Z].*\d|\d.*[a-zA-Z]`, password); !matched {
-		return nil, srverr.NewServerError(ServiceErrorPasswordContent)
+	if user.Email == "" && user.Phone == "" {
+		return nil, srverr.NewServerError(ServiceErrorEmailAndPhoneEmpty)
 	}
 
-	tx, err := m.transaction.BeginTransaction(ctx)
-	if err != nil {
-		return nil, srverr.NewServerError(srverr.ErrInternalServerError).
-			SetError(err.Error())
+	if user.Phone != "" {
+		if matched, _ := regexp.MatchString(`^\+?[1-9]\d{1,14}$`, user.Phone); !matched {
+			return nil, srverr.NewServerError(ServiceErrorPhoneIsNotValid)
+		}
 	}
-	defer m.transaction.Rollback(ctx, tx)
+	if user.Email != "" {
+		_, err := mail.ParseAddress(user.Email)
+		if err != nil {
+			return nil, srverr.NewServerError(ServiceErrorEmailIsNotValid)
+		}
+		if len(user.Email) > 255 {
+			return nil, srverr.NewServerError(ServiceErrorEmailTooLong)
+		}
+	}
+	if matched := passwordRegexp.MatchString(password); !matched {
+		return nil, srverr.NewServerError(ServiceErrorPasswordContent)
+	}
 
 	maxAttempts := 10
 	for i := 0; i < maxAttempts; i++ {

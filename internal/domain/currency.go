@@ -22,6 +22,10 @@ type Currency struct {
 
 type CurrencyCode string
 
+func (c CurrencyCode) String() string {
+	return string(c)
+}
+
 const (
 	USDCode CurrencyCode = "USD"
 	EURCode CurrencyCode = "EUR"

@@ -3,20 +3,17 @@ package user
 import (
 	"context"
 	"github.com/jackc/pgx/v5"
-	"net/http"
 	"protravel-finance/internal/domain"
 	"protravel-finance/internal/runner"
 	srverr "protravel-finance/internal/shared/server_error"
 )
 
 type Handler interface {
-	CreateUser(w http.ResponseWriter, r *http.Request)
-
 	runner.Runner
 }
 
 type Service interface {
-	CreateUser(ctx context.Context, user *domain.User, password string) (*domain.User, srverr.ServerError)
+	CreateUser(ctx context.Context, tx pgx.Tx, user *domain.User, password string) (*domain.User, srverr.ServerError)
 }
 
 type Repository interface {
