@@ -9,12 +9,12 @@ import (
 )
 
 type JWT struct {
-	jwtSecret string
+	jwtSecret []byte
 }
 
 func NewJWT(jwtSecret string) *JWT {
 	return &JWT{
-		jwtSecret: jwtSecret,
+		jwtSecret: []byte(jwtSecret),
 	}
 }
 
@@ -99,4 +99,3 @@ func (m *JWT) ValidateRefreshToken(tokenString string) (string, string, srverr.S
 	}
 	return userID, jti, nil
 }
-

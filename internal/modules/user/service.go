@@ -105,11 +105,6 @@ func (m *userService) CreateUserWithTx(ctx context.Context, tx pgx.Tx, user *dom
 		return nil, srverr.NewServerError(srverr.ErrInternalServerError).
 			SetError(err.Error())
 	}
-	err = m.transaction.Commit(ctx, tx)
-	if err != nil {
-		return nil, srverr.NewServerError(srverr.ErrInternalServerError).
-			SetError(err.Error())
-	}
 	return user, nil
 }
 

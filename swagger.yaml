@@ -17,7 +17,7 @@ produces:
   - application/json
 
 paths:
-  /auth/register:
+  /v1/auth/register:
     post:
       tags:
         - auth
@@ -47,7 +47,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/TransportError"
-  /auth/login:
+  /v1/auth/login:
     post:
       tags:
         - auth
@@ -77,7 +77,7 @@ paths:
           description: Internal server error
           schema:
             $ref: "#/definitions/TransportError"
-  /auth/refresh:
+  /v1/auth/refresh:
     post:
       tags:
         - auth

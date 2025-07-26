@@ -51,6 +51,7 @@ func (s *currencyService) UpdateCurrencyRates(ctx context.Context, api exchanger
 			TargetCurrencyCode: currency,
 			Rate:               int64(resp.Rates[string(currency)] * domain.CurrencyFromRate),
 			Date:               time.Now().UTC(),
+			UpdatedAt:          time.Now().UTC(),
 		})
 	}
 	tx, err := s.transaction.BeginTransaction(ctx)

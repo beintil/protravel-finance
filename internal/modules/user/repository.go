@@ -16,7 +16,7 @@ func NewRepository() Repository {
 }
 
 func (r *userRepository) CreateUser(ctx context.Context, tx pgx.Tx, user *domain.User) error {
-	row := tx.QueryRow(ctx, `
+	_, err := tx.Exec(ctx, `
 	INSERT INTO users (
 	        id, public_id, email, phone, login,
 	    	password_hash, first_name,
@@ -24,8 +24,8 @@ func (r *userRepository) CreateUser(ctx context.Context, tx pgx.Tx, user *domain
 	        language, timezone
 	        ) VALUES (
 	        $1, $2, $3, $4, $5,
-	        $6, $7, $8, $9
-	    ) RETURNING id`,
+	        $6, $7, $8, $9, $10, $11 
+	    )`,
 		user.ID,
 		user.PublicID,
 		user.Email,
@@ -38,13 +38,11 @@ func (r *userRepository) CreateUser(ctx context.Context, tx pgx.Tx, user *domain
 		user.Language,
 		user.Timezone,
 	)
-
-	err := row.Scan(&user.ID)
 	if err != nil {
 		if postgres.ErrorIs(err, postgres.DuplicateKeyValueViolatesUniqueConstraint) {
 			return RepositoryErrorUserAlreadyExists
 		}
-		return fmt.Errorf("CreateUserWithTx/Scan: %w", err)
+		return fmt.Errorf("CreateUser/Scan: %w", err)
 	}
 	return nil
 }
@@ -62,6 +60,7 @@ func (r *userRepository) GetUserByID(ctx context.Context, tx pgx.Tx, id string) 
 		&user.PublicID,
 		&user.Email,
 		&user.Phone,
+		&user.Login,
 		&user.PasswordHash,
 		&user.FirstName,
 		&user.LastName,
@@ -145,7 +144,7 @@ func (r *userRepository) GetUserByLoginParam(ctx context.Context, tx pgx.Tx, log
 	SELECT id, public_id, email, phone, login, password_hash, first_name, last_name, preferred_currency, language, timezone
 		FROM users
 	WHERE public_id = $1 OR email = $1 OR phone = $1 OR login = $1`, loginParam)
-	err := row.Scan(ctx, &user.ID, &user.PublicID, &user.Email, &user.Phone, &user.Login, &user.PasswordHash, &user.FirstName, &user.LastName, &user.PreferredCurrency, &user.Language, &user.Timezone)
+	err := row.Scan(&user.ID, &user.PublicID, &user.Email, &user.Phone, &user.Login, &user.PasswordHash, &user.FirstName, &user.LastName, &user.PreferredCurrency, &user.Language, &user.Timezone)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, RepositoryErrorUserNotFound

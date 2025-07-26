@@ -20,11 +20,11 @@ func (m *currencyRepository) SaveOrUpdateCurrencyRates(ctx context.Context, tx p
 	var values []string
 	var args []interface{}
 
-	var columnNum = 5
+	var columnNum = 6
 
 	for i, rate := range currencyRates {
-		values = append(values, fmt.Sprintf("($%d,$%d,$%d,$%d,$%d)",
-			i*columnNum+1, i*columnNum+2, i*columnNum+3, i*columnNum+4, i*columnNum+5))
+		values = append(values, fmt.Sprintf("($%d,$%d,$%d,$%d,$%d,$%d)",
+			i*columnNum+1, i*columnNum+2, i*columnNum+3, i*columnNum+4, i*columnNum+5, i*columnNum+6))
 
 		args = append(args,
 			rate.ID,
@@ -32,17 +32,16 @@ func (m *currencyRepository) SaveOrUpdateCurrencyRates(ctx context.Context, tx p
 			rate.TargetCurrencyCode,
 			rate.Rate,
 			rate.Date,
+			rate.UpdatedAt,
 		)
 	}
 
 	sql := fmt.Sprintf(`
-		INSERT INTO exchange_rates (id, base_currency, target_currency, rate, date)
+		INSERT INTO exchange_rates (id, base_currency, target_currency, rate, date, updated_at)
 		VALUES %s
-		ON CONFLICT (id) DO UPDATE SET
-			base_currency = EXCLUDED.base_currency,
-			target_currency = EXCLUDED.target_currency,
+		ON CONFLICT (base_currency, target_currency, date) DO UPDATE SET
 			rate = EXCLUDED.rate,
-			date = EXCLUDED.date
+  			updated_at = EXCLUDED.updated_at
 	`, strings.Join(values, ","))
 
 	_, err := tx.Exec(ctx, sql, args...)
