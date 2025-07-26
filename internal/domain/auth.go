@@ -1,7 +1,9 @@
 package domain
 
 type RegisterUser struct {
+	Login             string
 	Email             string
+	Phone             string
 	Password          string
 	PreferredCurrency CurrencyCode
 	FirstName         string
@@ -13,7 +15,8 @@ type RegisterUser struct {
 func (m RegisterUser) ToUser() *User {
 	return &User{
 		Email:             m.Email,
-		PasswordHash:      m.Password,
+		Login:             m.Login,
+		Phone:             m.Phone,
 		PreferredCurrency: m.PreferredCurrency,
 		FirstName:         m.FirstName,
 		LastName:          m.LastName,
@@ -25,4 +28,9 @@ func (m RegisterUser) ToUser() *User {
 type LoginUser struct {
 	Login    string // email, login, phone, public_id etc
 	Password string
+}
+
+type AuthToken struct {
+	AccessToken  string
+	RefreshToken string
 }

@@ -13,7 +13,8 @@ type Handler interface {
 }
 
 type Service interface {
-	CreateUser(ctx context.Context, tx pgx.Tx, user *domain.User, password string) (*domain.User, srverr.ServerError)
+	CreateUserWithTx(ctx context.Context, tx pgx.Tx, user *domain.User, password string) (*domain.User, srverr.ServerError)
+	GetUserByLoginParamWithTx(ctx context.Context, tx pgx.Tx, loginParam string) (*domain.User, srverr.ServerError)
 }
 
 type Repository interface {
@@ -21,4 +22,5 @@ type Repository interface {
 	GetUserByID(ctx context.Context, tx pgx.Tx, id string) (*domain.User, error)
 	GetUserByPublicID(ctx context.Context, tx pgx.Tx, publicID string) (*domain.User, error)
 	GetUserByEmail(ctx context.Context, tx pgx.Tx, email string) (*domain.User, error)
+	GetUserByLoginParam(ctx context.Context, tx pgx.Tx, loginParam string) (*domain.User, error)
 }

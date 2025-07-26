@@ -37,6 +37,8 @@ type envConfig struct {
 	Postgres PostgresConfig
 	Redis    RedisConfig
 
+	Auth AuthConfig
+
 	Exchangerate ExchangerateConfig
 }
 
@@ -67,6 +69,11 @@ type RedisConfig struct {
 	Port     string `env:"REDIS_PORT" env-required:"true"`
 	Password string `env:"REDIS_PASSWORD" env-required:"true"`
 	DB       int    `env:"REDIS_DB" env-required:"true"`
+}
+
+type AuthConfig struct {
+	Timeout time.Duration `env:"AUTH_TIMEOUT" env-required:"true"`
+	Secret  string        `env:"AUTH_SECRET" env-required:"true"`
 }
 
 type ExchangerateConfig struct {

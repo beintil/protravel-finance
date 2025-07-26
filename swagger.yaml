@@ -17,34 +17,103 @@ produces:
   - application/json
 
 paths:
-  /user:
+  /auth/register:
     post:
-      summary: "Register a new user"
-      description: "Creates a new user with the provided details."
       tags:
-        - user
+        - auth
+      summary: Register new user
+      description: Register a new user with required fields
+      operationId: registerUser
       parameters:
         - in: body
-          name: user
+          name: body
           required: true
           schema:
-            $ref: "#/definitions/User"
+            $ref: "#/definitions/RegisterUserRequest"
       responses:
-        201:
-          description: "User created"
-
+        200:
+          description: Successfully registered
+          schema:
+            $ref: "#/definitions/RegisterUserResponse"
         400:
-          description: "Invalid input"
+          description: Bad request (validation error)
+          schema:
+            $ref: "#/definitions/TransportError"
         409:
-          description: "User already exists"
+          description: User already exists
+          schema:
+            $ref: "#/definitions/TransportError"
         500:
-          description: "Internal error"
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/TransportError"
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: Login user
+      description: Authenticate user with login and password
+      operationId: loginUser
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/LoginUserRequest"
+      responses:
+        200:
+          description: Successfully authenticated
+          schema:
+            $ref: "#/definitions/LoginUserResponse"
+        400:
+          description: Bad request (validation error)
+          schema:
+            $ref: "#/definitions/TransportError"
+        404:
+          description: User not found
+          schema:
+            $ref: "#/definitions/TransportError"
+        500:
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/TransportError"
+  /auth/refresh:
+    post:
+      tags:
+        - auth
+      summary: Refresh token
+      description: Refresh expired access token using refresh token
+      operationId: refreshToken
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/RefreshTokenRequest"
+      responses:
+        200:
+          description: Successfully refreshed token
+          schema:
+            $ref: "#/definitions/RefreshTokenResponse"
+        400:
+          description: Bad request (invalid refresh token)
+          schema:
+            $ref: "#/definitions/TransportError"
+        401:
+          description: Unauthorized (expired refresh token)
+          schema:
+            $ref: "#/definitions/TransportError"
+        500:
+          description: Internal server error
+          schema:
+            $ref: "#/definitions/TransportError"
 
 definitions:
   RegisterUserRequest:
     type: object
-    description: "Register user"
+    description: "Register user. At least one of two fields is required: email or phone"
     required:
+      - login
       - password
       - preferred_currency
       - first_name
@@ -52,6 +121,9 @@ definitions:
       - language
       - timezone
     properties:
+      login:
+        type: string
+        minLength: 5
       phone:
         type: string
         format: phone
@@ -60,12 +132,13 @@ definitions:
         format: email
         maxLength: 255
         example: "test@example.com"
-        description: "User's email address"
+        description: "User's email address. At least one of two fields is required: email or phone"
       password:
         type: string
         minLength: 8
+        format: password
         example: "password123"
-        description: "Password (at least 8 characters, including one letter and one digit)"
+        description: "Password (at least 8 characters, including one letter and one digit). At least one of two fields is required: email or phone"
       first_name:
         type: string
         maxLength: 100
@@ -92,19 +165,79 @@ definitions:
         maxLength: 50
         example: "UTC"
         description: "IANA timezone (e.g., UTC, Asia/Bangkok, optional)"
+
   RegisterUserResponse:
     type: object
     description: "register user response"
     required:
-      - access_token
+      - auth_token
       - user
     properties:
-      access_token:
-        type: string
-        description: identification token
+      auth_token:
+        $ref: "#/definitions/AuthTokenResponse"
       user:
         $ref: "#/definitions/User"
         description: register user
+
+  LoginUserRequest:
+    type: object
+    description: "User login request"
+    required:
+      - login
+      - password
+    properties:
+      login:
+        type: string
+        example: "john.doe"
+        description: "Login field (can be email, username, phone, or public_id)"
+      password:
+        type: string
+        format: password
+        minLength: 8
+        description: "User password"
+
+  AuthTokenResponse:
+    type: object
+    description: "Response with access and refresh tokens"
+    required:
+      - access_token
+      - refresh_token
+    properties:
+      access_token:
+        type: string
+        description: "JWT or other token used to authorize API requests"
+      refresh_token:
+        type: string
+        description: "Token used to refresh the access token"
+
+  LoginUserResponse:
+    type: object
+    required:
+      - auth_token
+    properties:
+      user:
+        $ref: "#/definitions/User"
+      auth_token:
+        $ref: "#/definitions/AuthTokenResponse"
+        description: "Successful login response, returns tokens"
+  RefreshTokenRequest:
+    type: object
+    description: "Request to refresh an expired access token"
+    required:
+      - refresh_token
+    properties:
+      refresh_token:
+        type: string
+        description: "The refresh token obtained during login or previous refresh"
+        example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+  RefreshTokenResponse:
+    type: object
+    properties:
+      token:
+        $ref: "#/definitions/AuthTokenResponse"
+        description: "Response with new access and refresh tokens"
+
   User:
     type: object
     description: "User data"
@@ -146,6 +279,7 @@ definitions:
         maxLength: 50
         example: "UTC"
         description: "IANA timezone (e.g., UTC, Asia/Bangkok, optional)"
+
   TransportError:
     type: object
     required:

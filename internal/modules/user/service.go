@@ -35,9 +35,12 @@ var (
 	passwordRegexp = regexp.MustCompile(`[a-zA-Z].*\d|\d.*[a-zA-Z]`)
 )
 
-func (m *userService) CreateUser(ctx context.Context, tx pgx.Tx, user *domain.User, password string) (*domain.User, srverr.ServerError) {
+func (m *userService) CreateUserWithTx(ctx context.Context, tx pgx.Tx, user *domain.User, password string) (*domain.User, srverr.ServerError) {
 	if !domain.CurrencyCodesMap[user.PreferredCurrency] {
 		return nil, srverr.NewServerError(ServiceErrorCurrencyCodeNotAllowed)
+	}
+	if utf8.RuneCountInString(user.Login) < 5 {
+		return nil, srverr.NewServerError(ServiceErrorLenLogin)
 	}
 	if utf8.RuneCountInString(password) < 8 {
 		return nil, srverr.NewServerError(ServiceErrorLenPassword)
@@ -104,6 +107,18 @@ func (m *userService) CreateUser(ctx context.Context, tx pgx.Tx, user *domain.Us
 	}
 	err = m.transaction.Commit(ctx, tx)
 	if err != nil {
+		return nil, srverr.NewServerError(srverr.ErrInternalServerError).
+			SetError(err.Error())
+	}
+	return user, nil
+}
+
+func (m *userService) GetUserByLoginParamWithTx(ctx context.Context, tx pgx.Tx, loginParam string) (*domain.User, srverr.ServerError) {
+	user, err := m.userRepos.GetUserByLoginParam(ctx, tx, loginParam)
+	if err != nil {
+		if errors.Is(err, RepositoryErrorUserNotFound) {
+			return nil, srverr.NewServerError(ServiceErrorUserNotFound)
+		}
 		return nil, srverr.NewServerError(srverr.ErrInternalServerError).
 			SetError(err.Error())
 	}

@@ -11,12 +11,14 @@ import (
 	"os/signal"
 	"protravel-finance/internal/config"
 	"protravel-finance/internal/cron"
+	"protravel-finance/internal/modules/auth"
 	"protravel-finance/internal/modules/currency"
 	"protravel-finance/internal/modules/user"
 	"protravel-finance/internal/runner"
 	http_server "protravel-finance/internal/server/http"
 	"protravel-finance/internal/shared/database/postgres"
 	redis2 "protravel-finance/internal/shared/database/redis"
+	jwtsec "protravel-finance/internal/shared/jwt_sec"
 	"protravel-finance/internal/shared/middleware"
 	"protravel-finance/internal/shared/response"
 	transperr "protravel-finance/internal/shared/transport_error"
@@ -115,18 +117,24 @@ func initBusinessLogic(
 	log logger.Logger,
 	cfg config.Config,
 ) {
+	jwtSec := jwtsec.NewJWT(cfg.Auth.Secret)
+
 	// Init Repositories
+	authRepos := auth.NewAuthRepository()
 	userRepos := user.NewRepository()
 	currencyRepos := currency.NewRepository()
 
 	// Init Services
 	userService := user.NewService(userRepos, transaction)
+	authService := auth.NewService(userService, authRepos, transaction, redisClient, jwtSec)
 	currencyService := currency.NewService(currencyRepos, transaction, redisClient)
 
 	// Init client api
 	exchangeRateApi := exchangerate.NewExchangeRate(cfg.Exchangerate.BaseURL, log)
 
 	runner.InitHandlers(router, mid,
+		auth.NewRunnerHandlerV1(router, httpResp, convert, log, validationFormat, authService, cfg.Auth.Timeout),
+
 		user.NewRunnerHandlerV1(router, httpResp, convert, log, validationFormat, userService),
 	)
 

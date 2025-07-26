@@ -44,7 +44,7 @@ func (r *userRepository) CreateUser(ctx context.Context, tx pgx.Tx, user *domain
 		if postgres.ErrorIs(err, postgres.DuplicateKeyValueViolatesUniqueConstraint) {
 			return RepositoryErrorUserAlreadyExists
 		}
-		return fmt.Errorf("CreateUser/Scan: %w", err)
+		return fmt.Errorf("CreateUserWithTx/Scan: %w", err)
 	}
 	return nil
 }
@@ -144,7 +144,7 @@ func (r *userRepository) GetUserByLoginParam(ctx context.Context, tx pgx.Tx, log
 	row := tx.QueryRow(ctx, `
 	SELECT id, public_id, email, phone, login, password_hash, first_name, last_name, preferred_currency, language, timezone
 		FROM users
-	WHERE email = $1 OR public_id = $1 OR login = $1 OR phone = $1`, loginParam)
+	WHERE public_id = $1 OR email = $1 OR phone = $1 OR login = $1`, loginParam)
 	err := row.Scan(ctx, &user.ID, &user.PublicID, &user.Email, &user.Phone, &user.Login, &user.PasswordHash, &user.FirstName, &user.LastName, &user.PreferredCurrency, &user.Language, &user.Timezone)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

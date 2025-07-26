@@ -27,3 +27,13 @@ type ErrorTypeConflict string
 func (err ErrorTypeConflict) String() string {
 	return string(err)
 }
+
+type ErrorTypeUnauthorized string
+
+func (err ErrorTypeUnauthorized) String() string {
+	return string(err)
+}
+
+const (
+	ErrUnauthorized ErrorTypeUnauthorized = "unauthorized"
+)

@@ -12,7 +12,7 @@ func UserModelToDomain(m *models.User) *domain.User {
 		Email:             m.Email.String(),
 		FirstName:         m.FirstName,
 		LastName:          m.LastName,
-		PreferredCurrency: m.PreferredCurrency,
+		PreferredCurrency: domain.CurrencyCode(m.PreferredCurrency),
 		Language:          domain.Language(m.Language),
 		Timezone:          m.Timezone,
 	}
@@ -24,7 +24,7 @@ func UserDomainToModel(d *domain.User) *models.User {
 		Email:             strfmt.Email(d.Email),
 		FirstName:         d.FirstName,
 		LastName:          d.LastName,
-		PreferredCurrency: d.PreferredCurrency,
+		PreferredCurrency: d.PreferredCurrency.String(),
 		Language:          d.Language.String(),
 		Timezone:          d.Timezone,
 	}

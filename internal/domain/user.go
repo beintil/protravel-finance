@@ -20,3 +20,8 @@ type User struct {
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }
+
+type UserAuthData struct {
+	ID       uuid.UUID
+	PublicID string
+}
