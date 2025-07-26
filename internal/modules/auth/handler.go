@@ -52,7 +52,8 @@ func (m *authHandler) Run(router *mux.Router, mid middleware.Middleware) {
 
 	authRouter.HandleFunc("/login", m.Login).Methods(http.MethodPost)
 	authRouter.HandleFunc("/register", m.Register).Methods(http.MethodPost)
-	authRouter.HandleFunc("/refresh", m.RefreshToken).Methods(http.MethodPost)
+	authRouter.HandleFunc("/refresh", m.RefreshToken).Methods(http.MethodPatch)
+	authRouter.HandleFunc("/logout", m.Logout).Methods(http.MethodDelete)
 }
 
 func (m *authHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -156,4 +157,36 @@ func (m *authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	var resp = dto.AuthTokenDomainToModel(token)
 
 	m.httpResponse.WriteResponse(w, r, http.StatusOK, resp)
+}
+
+func (m *authHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	var req models.LogoutRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		m.httpResponse.ErrorResponse(w, r,
+			dto.TransportErrorToModel(
+				transperr.NewTransportError(transperr.ValidationError, http.StatusBadRequest),
+			))
+		return
+	}
+	err = req.Validate(m.validationFormat)
+	if err != nil {
+		m.httpResponse.ErrorResponse(w, r, dto.TransportErrorToModel(
+			transperr.NewTransportError(transperr.ValidationError, http.StatusBadRequest),
+		))
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), m.authTimeout)
+	defer cancel()
+
+	var refreshToken = *req.RefreshToken
+
+	srvErr := m.authService.Logout(ctx, refreshToken)
+	if srvErr != nil {
+		m.httpResponse.ErrorResponse(w, r, dto.TransportErrorToModel(
+			m.converter.ToHTTP(srvErr),
+		))
+		return
+	}
+	m.httpResponse.WriteResponse(w, r, http.StatusOK, nil)
 }

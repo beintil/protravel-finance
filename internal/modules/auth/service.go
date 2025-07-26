@@ -63,7 +63,7 @@ func (m *authService) Register(
 
 	accessToken, srvErr := m.jwtSec.GenerateAccessToken(newUser.ID.String())
 	if srvErr != nil {
-		return nil,  nil, srvErr
+		return nil, nil, srvErr
 	}
 	refreshToken, jti, srvErr := m.jwtSec.GenerateRefreshToken(newUser.ID.String())
 	if srvErr != nil {
@@ -77,7 +77,7 @@ func (m *authService) Register(
 	}
 	err = m.transaction.Commit(ctx, tx)
 	if err != nil {
-		return nil, nil,  srverr.NewServerError(srverr.ErrInternalServerError).
+		return nil, nil, srverr.NewServerError(srverr.ErrInternalServerError).
 			SetError(err.Error())
 	}
 
@@ -180,4 +180,17 @@ func (m *authService) RefreshToken(ctx context.Context, refreshToken string) (*d
 		AccessToken:  newAccessToken,
 		RefreshToken: newRefreshToken,
 	}, nil
+}
+
+func (m *authService) Logout(ctx context.Context, refreshToken string) srverr.ServerError {
+	_, jti, srvErr := m.jwtSec.ValidateRefreshToken(refreshToken)
+	if srvErr != nil {
+		return srvErr
+	}
+	err := m.authRepository.DeleteRefreshToken(ctx, m.redisClient, jti)
+	if err != nil {
+		return srverr.NewServerError(srverr.ErrInternalServerError).
+			SetError(err.Error())
+	}
+	return nil
 }
